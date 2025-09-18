@@ -22,7 +22,7 @@ jobs:
       - run: |
           echo "Running test"        
 
-  trigger-deploy:
+  deploy:
     needs: test
     runs-on: ubuntu-latest
     steps:
