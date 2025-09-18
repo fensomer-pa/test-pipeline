@@ -9,7 +9,21 @@ on:
       - 'feature/**'
       - 'release/**'
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Running build"
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Running test"        
+
   trigger-deploy:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - run: |
