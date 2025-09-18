@@ -1,0 +1,21 @@
+name: deploy.yml
+on:
+  pull_request:
+    paths:
+      - '**'
+  push:
+    branches:
+      - 'main'
+      - 'feature/**'
+      - 'release/**'
+jobs:
+  trigger-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.PAT }}"\
+            https://api.github.com/repos/fensomer-pa/test-terraform-gcp/actions/workflows/crj-deploy.yml/dispatches \
+            -d '{"ref":"feature/testing-tf","inputs":{"pipeline-name":"stats-intermediate-to-canonical", "image-url":"bob"}}'
