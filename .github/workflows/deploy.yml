@@ -12,9 +12,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      output1: ${{ steps.build.outputs.image_tag }}
+      image_tag: ${{ steps.set_tag.outputs.image_tag }}
     steps:
-      - run: |
+      - id: set_tag
+        run: |
           echo "Running build"
           echo "image_tag=abc123" >> "$GITHUB_OUTPUT"
 
