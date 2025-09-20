@@ -34,6 +34,9 @@ jobs:
     steps:
       - name: Dispatch workflow and log response
         run: |
+          
+          echo image-tag = ${{needs.build.outputs.image_tag}}
+          
           # Create a temporary file to store the API response body
           response_file=$(mktemp)
 
