@@ -11,19 +11,25 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      output1: ${{ steps.build.outputs.image_tag }}
     steps:
       - run: |
           echo "Running build"
+          echo "image_tag=abc123" >> "$GITHUB_OUTPUT"
 
   test:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          echo "Running test"        
+      - id: build
+        run: |
+          echo "Running test"  
 
   deploy:
-    needs: test
+    needs:
+      - build
+      - test
     runs-on: ubuntu-latest
     steps:
       - run: |
@@ -32,4 +38,4 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.PAT }}"\
             https://api.github.com/repos/fensomer-pa/test-terraform-gcp/actions/workflows/crj-deploy.yml/dispatches \
-            -d '{"ref":"feature/testing-tf","inputs":{"pipeline-name":"stats-intermediate-to-canonical", "environment-name":"dev", "image-url":"bob"}}'
+            -d '{"ref":"feature/testing-tf","inputs":{"pipeline-name":"stats-intermediate-to-canonical", "environment-name":"dev", "image-tag":"${{needs.build.outputs.image_tag}}"}}'
