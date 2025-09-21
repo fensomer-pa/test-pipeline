@@ -11,6 +11,11 @@ jobs:
     name: Build and Push
     environment: dev
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
     outputs:
       image_tag: ${{ steps.set_image_tag.outputs.IMAGE_TAG }}
     steps:
