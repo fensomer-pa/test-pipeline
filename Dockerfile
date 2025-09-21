@@ -1,6 +1,6 @@
 # Stage 1: The Builder Stage
 # This stage is for building and installing dependencies.
-FROM r-base:4.2 AS builder
+FROM rocker/r-base:4.5.1 AS builder
 
 # Set a working directory
 WORKDIR /app
@@ -30,7 +30,7 @@ RUN Rscript -e "testthat::test_dir('tests')"
 
 # Stage 2: The Runner Stage
 # This stage is for the final, production-ready image.
-FROM r-base:4.2
+FROM rocker/r-base:4.5.1
 
 ENV PROCESSING_PERIOD=""
 ENV ACTIVE_PERIOD=""
