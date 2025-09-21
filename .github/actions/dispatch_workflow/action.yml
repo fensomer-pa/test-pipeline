@@ -1,7 +1,0 @@
-name: dispatch_workflow
-author: Reece.fensome
-description: dispatch_workflow
-inputs:
-
-runs:
-  using:

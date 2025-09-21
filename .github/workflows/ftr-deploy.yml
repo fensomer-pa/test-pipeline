@@ -1,4 +1,4 @@
-name: ftr-deploy.yml
+name: Feature Workflow
 on:
   pull_request:
     paths:
@@ -16,72 +16,51 @@ env:
   IMAGE_TAG: ${{ github.sha }}
 
 jobs:
-  build:
-    name: Build and Push
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Authenticate to Google Cloud
-        id: auth
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.GCP_DEV_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_DEV_SERVICE_ACCOUNT }}
-
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v3
-
-      - name: Configure Docker to use gcloud as a credential helper
-        run: gcloud auth configure-docker ${{ vars.GCP_DEV_IMAGE_REGISTRY_HOST }}
-
-      - name: Build Image
-        run: |
-          docker build -t ${{ env.IMAGE_URL }}:${{ env.IMAGE_TAG }} .
-
-      - name: Run Trivy vulnerability scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.IMAGE_URL }}:${{ env.IMAGE_TAG }}
-          format: 'table'
-          severity: 'CRITICAL,HIGH'
-
-      - name: Push Image
-        run: docker push ${{ env.IMAGE_URL }}:${{ env.IMAGE_TAG }}
+#  build:
+#    name: Build and Push
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#
+#      - name: Authenticate to Google Cloud
+#        id: auth
+#        uses: google-github-actions/auth@v2
+#        with:
+#          workload_identity_provider: ${{ secrets.GCP_DEV_WORKLOAD_IDENTITY_PROVIDER }}
+#          service_account: ${{ secrets.GCP_DEV_SERVICE_ACCOUNT }}
+#
+#      - name: Set up Docker
+#        uses: docker/setup-buildx-action@v3
+#
+#      - name: Configure Docker to use gcloud as a credential helper
+#        run: gcloud auth configure-docker ${{ vars.GCP_DEV_IMAGE_REGISTRY_HOST }}
+#
+#      - name: Build Image
+#        run: |
+#          docker build -t ${{ env.IMAGE_URL }}:${{ env.IMAGE_TAG }} .
+#
+#      - name: Run Trivy vulnerability scan
+#        uses: aquasecurity/trivy-action@master
+#        with:
+#          image-ref: ${{ env.IMAGE_URL }}:${{ env.IMAGE_TAG }}
+#          format: 'table'
+#          severity: 'CRITICAL,HIGH'
+#
+#      - name: Push Image
+#        run: docker push ${{ env.IMAGE_URL }}:${{ env.IMAGE_TAG }}
 
 
   deploy:
     name: Trigger Deployment Workflow
-    needs:
-      - build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger downstream deployment workflow
-        run: |
-          # Create a temporary file to store the API response body
-          response_file=$(mktemp)
-
-          # Execute curl, writing the HTTP status code to a variable and the body to the temp file
-          http_status_code=$(curl -s -w "%{http_code}" -L \
-            -o "$response_file" \
-            -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.PAT }}"\
-            https://api.github.com/repos/${{ env.DEPLOYMENT_WORKFLOW_REPO }}/actions/workflows/crj-dev-deploy.yml/dispatches \
-            -d '{"ref":"feature/testing-tf","inputs":{"pipeline_name":"${{ env.PIPELINE_NAME }}", "environment_name":"ftr", "image_tag":"${{ env.IMAGE_URL }}:${{ env.IMAGE_TAG }}"}}'
-          )
-
-          echo "API response status code: $http_status_code"
-          echo "--- API Response Body ---"
-          cat "$response_file"
-          echo "-------------------------"
-
-          # Fail the step if the status code is not a success (2xx)
-          if [ "$http_status_code" -lt 200 ] || [ "$http_status_code" -ge 300 ]; then
-            echo "Error: API call failed with status code $http_status_code"
-            exit 1
-          fi
-
-          echo "Successfully triggered workflow. View runs at: https://github.com/${{ env.DEPLOYMENT_WORKFLOW_REPO }}/actions/workflows/crj-dev-deploy.yml"
+#    needs:
+#      - build
+    uses: ./.github/actions/dispatch_deployment_workflow
+    with:
+      pipeline_name: ${{ env.PIPELINE_NAME }}
+      branch_name: ${{ github.ref }}
+      bearer_token: ${{ secrets.PAT }}
+      deployment_workflow_repo: ${{ env.DEPLOYMENT_WORKFLOW_REPO }}
+      deployment_workflow_name: ${{ env.DEPLOYMENT_WORKFLOW_NAME }}
+      image_url: ${{ env.IMAGE_URL }}:${{ env.IMAGE_TAG }}
