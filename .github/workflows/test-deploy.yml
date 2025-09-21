@@ -1,0 +1,61 @@
+name: dev-deploy.yml
+on:
+  pull_request:
+    paths:
+      - '**'
+  push:
+    branches:
+      - 'release/**'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.set_tag.outputs.image_tag }}
+    steps:
+      - id: set_tag
+        run: |
+          echo "Running build"
+          echo "image_tag=abc123" >> "$GITHUB_OUTPUT"
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - id: build
+        run: |
+          echo "Running test"  
+
+  deploy:
+    needs:
+      - build
+      - test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch workflow and log response
+        run: |
+          
+          echo image-tag = ${{needs.build.outputs.image_tag}}
+          
+          # Create a temporary file to store the API response body
+          response_file=$(mktemp)
+
+          # Execute curl, writing the HTTP status code to a variable and the body to the temp file
+          http_status_code=$(curl -w "%{http_code}" -L \
+            -o "$response_file" \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.PAT }}"\
+            https://api.github.com/repos/fensomer-pa/test-terraform-gcp/actions/workflows/crj-deploy.yml/dispatches \
+            -d '{"ref":"feature/testing-tf","inputs":{"pipeline_name":"stats-intermediate-to-canonical", "environment_name":"dev", "image_tag":"${{needs.build.outputs.image_tag}}"}}'
+          )
+
+          echo "API response status code: $http_status_code"
+          echo "--- API Response Body ---"
+          cat "$response_file"
+          echo "-------------------------"
+
+          # Fail the step if the status code is not a success (2xx)
+          if [ "$http_status_code" -lt 200 ] || [ "$http_status_code" -ge 300 ]; then
+            echo "Error: API call failed with status code $http_status_code"
+            exit 1
+          fi
