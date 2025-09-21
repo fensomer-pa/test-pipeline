@@ -45,7 +45,7 @@ jobs:
             -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.PAT }}"\
-            https://api.github.com/repos/fensomer-pa/test-terraform-gcp/actions/workflows/crj-deploy.yml/dispatches \
+            https://api.github.com/repos/fensomer-pa/test-terraform-gcp/actions/workflows/crj-dev-deploy.yml/dispatches \
             -d '{"ref":"feature/testing-tf","inputs":{"pipeline_name":"stats-intermediate-to-canonical", "environment_name":"ftr", "image_tag":"${{needs.build.outputs.image_tag}}"}}'
           )
 
