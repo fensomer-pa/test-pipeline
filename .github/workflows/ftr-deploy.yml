@@ -1,4 +1,4 @@
-name: ftr-deploy.yml
+name: Feature Workflow
 on:
   pull_request:
     paths:
