@@ -59,3 +59,5 @@ jobs:
             echo "Error: API call failed with status code $http_status_code"
             exit 1
           fi
+
+          echo "Successfully triggered workflow. View runs at: https://github.com/fensomer-pa/test-terraform-gcp/actions/workflows/crj-dev-deploy.yml"
