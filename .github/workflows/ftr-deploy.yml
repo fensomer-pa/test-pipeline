@@ -54,14 +54,31 @@ jobs:
 
   deploy:
     name: Trigger Deployment Workflow
-#    needs:
-#      - build
-    uses: ./.github/actions/dispatch_deployment_workflow
-    with:
-      pipeline_name: ${{ vars.PIPELINE_NAME }}
-      branch_name: ${{ github.ref }}
-      deployment_workflow_repo: ${{ vars.DEPLOYMENT_WORKFLOW_REPO }}
-      deployment_workflow_name: ${{ vars.DEPLOYMENT_WORKFLOW_NAME }}
-      image_url: 'BOB'
-    secrets:
-      bearer_token: ${{ secrets.PAT }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Deployment Workflow
+        uses: ./.github/actions/dispatch_deployment_workflow
+        with:
+          pipeline_name: ${{ vars.PIPELINE_NAME }}
+          branch_name: ${{ github.ref }}
+          deployment_workflow_repo: ${{ vars.DEPLOYMENT_WORKFLOW_REPO }}
+          deployment_workflow_name: ${{ vars.DEPLOYMENT_WORKFLOW_NAME }}
+          image_url: 'BOB'
+        secrets:
+          bearer_token: ${{ secrets.PAT }}
+
+
+
+#    name: Trigger Deployment Workflow
+##    needs:
+##      - build
+#    uses: ./.github/actions/dispatch_deployment_workflow
+#    with:
+#      pipeline_name: ${{ vars.PIPELINE_NAME }}
+#      branch_name: ${{ github.ref }}
+#      deployment_workflow_repo: ${{ vars.DEPLOYMENT_WORKFLOW_REPO }}
+#      deployment_workflow_name: ${{ vars.DEPLOYMENT_WORKFLOW_NAME }}
+#      image_url: 'BOB'
+#    secrets:
+#      bearer_token: ${{ secrets.PAT }}
