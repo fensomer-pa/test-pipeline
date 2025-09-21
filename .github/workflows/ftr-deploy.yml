@@ -9,26 +9,96 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    outputs:
-      image_tag: ${{ steps.set_tag.outputs.image_tag }}
     steps:
-      - id: set_tag
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.2'
+
+      - name: Install dependencies
         run: |
-          echo "Running build"
-          echo "image_tag=abc123" >> "$GITHUB_OUTPUT"
+          install.packages("remotes")
+          remotes::install_deps(dependencies = TRUE)
+
+      - name: Lint with lintr
+        run: |
+          install.packages("lintr")
+          lintr::lint_package()
 
   test:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - id: build
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.2'
+
+      - name: Install dependencies
         run: |
-          echo "Running test"  
+          install.packages("remotes")
+          remotes::install_deps(dependencies = TRUE)
+
+      - name: Run tests with testthat
+        run: |
+          Rscript -e "testthat::test_dir('tests')"  
+
+  package:
+    environment: dev
+    needs:
+     - build
+     - test
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.set_image_tag.outputs.IMAGE_TAG }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+
+      - name: Authenticate Docker to Artifact Registry
+        uses: docker/login-action@v3
+        with:
+          registry: europe-west2-docker.pkg.dev
+          username: _json_key
+          password: ${{ steps.auth.outputs.access_token }}
+
+      - name: Set image tag
+        id: set_image_tag
+        run: |
+          # Use a consistent and unique tag, like the commit SHA
+          echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Build and Push Docker image
+        env:
+          PROJECT_ID: pa-rf-sandbox
+          REPOSITORY: rf-pa-dev-docker-registry
+          IMAGE_NAME: my-r-app-image
+        run: |
+          IMAGE_TAG=${{ steps.set_image_tag.outputs.IMAGE_TAG }}
+          docker build -t europe-west2-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG .
+          docker push europe-west2-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG
 
   deploy:
     needs:
       - build
       - test
+      - package
     runs-on: ubuntu-latest
     steps:
       - name: Dispatch workflow and log response
