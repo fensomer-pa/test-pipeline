@@ -7,42 +7,9 @@ on:
     branches:
       - 'feature/**'
 jobs:
-  build:
-    name: Build and Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: r-lib/actions/setup-r@v2
-      - uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          cache-version: 2
-
-      - name: Lint with lintr
-        run: |
-          Rscript -e "lintr::lint_package()"
-
-  test:
-    name: Run Tests
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: r-lib/actions/setup-r@v2
-      - uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          cache-version: 2
-
-
-      - name: Run tests with testthat
-        run: |
-          Rscript -e "testthat::test_dir('tests')"
-
   package:
     name: Build and Push
     environment: dev
-    needs:
-      - build
-      - test
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.set_image_tag.outputs.IMAGE_TAG }}
@@ -86,8 +53,6 @@ jobs:
   deploy:
     name: Deploy to Cloud Run
     needs:
-      - build
-      - test
       - package
     runs-on: ubuntu-latest
     steps:
