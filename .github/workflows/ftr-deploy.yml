@@ -36,7 +36,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: europe-west2-docker.pkg.dev
-          username: _json_key
+          username: 'oauth2accesstoken'
           password: ${{ steps.auth.outputs.access_token }}
 
       - name: Set image tag
