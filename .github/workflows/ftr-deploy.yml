@@ -60,7 +60,8 @@ jobs:
     with:
       pipeline_name: ${{ vars.PIPELINE_NAME }}
       branch_name: ${{ github.ref }}
-      bearer_token: ${{ secrets.PAT }}
       deployment_workflow_repo: ${{ vars.DEPLOYMENT_WORKFLOW_REPO }}
       deployment_workflow_name: ${{ vars.DEPLOYMENT_WORKFLOW_NAME }}
-      image_url: ${{ env.IMAGE_URL }}:${{ env.IMAGE_TAG }}
+      image_url: '${{ env.IMAGE_URL }}:${{ env.IMAGE_TAG }}'
+    secrets:
+      bearer_token: ${{ secrets.PAT }}
