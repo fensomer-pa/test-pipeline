@@ -12,7 +12,7 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends \
 
 # Install R dependencies from DESCRIPTION file
 # We use the r-lib/actions/setup-r-dependencies equivalent in a Docker context
-RUN install.packages("remotes")
+RUN Rscript -e "install.packages('remotes')"
 COPY DESCRIPTION /app/
 RUN Rscript -e "remotes::install_deps(dependencies = TRUE)"
 
