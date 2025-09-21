@@ -8,6 +8,7 @@ on:
       - 'feature/**'
 jobs:
   build:
+    name: Build and Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,6 +22,7 @@ jobs:
           Rscript -e "lintr::lint_package()"
 
   test:
+    name: Run Tests
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -30,11 +32,13 @@ jobs:
         with:
           cache-version: 2
 
+
       - name: Run tests with testthat
         run: |
           Rscript -e "testthat::test_dir('tests')"
 
   package:
+    name: Build and Push
     environment: dev
     needs:
       - build
@@ -80,6 +84,7 @@ jobs:
           docker push europe-west2-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG
 
   deploy:
+    name: Deploy to Cloud Run
     needs:
       - build
       - test
