@@ -18,7 +18,7 @@ jobs:
       id-token: 'write'
 
     env:
-      IMAGE_URL: ${{ vars.GCP_IMAGE_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_IMAGE_REGISTRY_NAME }}/${{ vars.PIPELINE_NAME }}
+      IMAGE_URL: ${{ vars.GCP_IMAGE_REGISTRY_HOST }}/${{ env.GCP_PROJECT_ID }}/${{ vars.GCP_IMAGE_REGISTRY_NAME }}/${{ vars.PIPELINE_NAME }}
       IMAGE_TAG: ${{ github.sha }}
 
     steps:
