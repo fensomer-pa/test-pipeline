@@ -12,7 +12,7 @@ permissions:
   id-token: 'write'
 
 env:
-  IMAGE_URL: ${{ env.GCP_DEV_IMAGE_REGISTRY_HOST }}/${{ env.GCP_DEV_PROJECT_ID }}/${{ env.GCP_DEV_IMAGE_REGISTRY_NAME }}/${{ env.PIPELINE_NAME }}
+  IMAGE_URL: ${{ vars.GCP_DEV_IMAGE_REGISTRY_HOST }}/${{ vars.GCP_DEV_PROJECT_ID }}/${{ vars.GCP_DEV_IMAGE_REGISTRY_NAME }}/${{ vars.PIPELINE_NAME }}
   IMAGE_TAG: ${{ github.sha }}
 
 jobs:
@@ -58,9 +58,9 @@ jobs:
 #      - build
     uses: ./.github/actions/dispatch_deployment_workflow
     with:
-      pipeline_name: ${{ env.PIPELINE_NAME }}
+      pipeline_name: ${{ vars.PIPELINE_NAME }}
       branch_name: ${{ github.ref }}
       bearer_token: ${{ secrets.PAT }}
-      deployment_workflow_repo: ${{ env.DEPLOYMENT_WORKFLOW_REPO }}
-      deployment_workflow_name: ${{ env.DEPLOYMENT_WORKFLOW_NAME }}
+      deployment_workflow_repo: ${{ vars.DEPLOYMENT_WORKFLOW_REPO }}
+      deployment_workflow_name: ${{ vars.DEPLOYMENT_WORKFLOW_NAME }}
       image_url: ${{ env.IMAGE_URL }}:${{ env.IMAGE_TAG }}
