@@ -12,15 +12,12 @@ permissions:
   id-token: 'write'
 
 env:
-  VERSION: ${{ github.sha }}
-  PROJECT_ID: pa-rf-sandbox
-  REPOSITORY: rf-pa-dev-docker-registry
-  IMAGE_NAME: my-r-app-image
+  IMAGE_URL: ${{ env.GCP_DEV_IMAGE_REGISTRY_HOST }}/${{ env.GCP_DEV_PROJECT_ID }}/${{ env.GCP_DEV_IMAGE_REGISTRY_NAME }}/${{ env.PIPELINE_NAME }}
+  IMAGE_TAG: ${{ github.sha }}
 
 jobs:
   build:
-    name: Build and Test
-    environment: dev
+    name: Build and Push
     runs-on: ubuntu-latest
 
     steps:
@@ -31,28 +28,28 @@ jobs:
         id: auth
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_DEV_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEV_SERVICE_ACCOUNT }}
 
       - name: Set up Docker
         uses: docker/setup-buildx-action@v3
 
       - name: Configure Docker to use gcloud as a credential helper
-        run: gcloud auth configure-docker ${{ vars.GCP_IMAGE_REGISTRY_HOST }}
+        run: gcloud auth configure-docker ${{ vars.GCP_DEV_IMAGE_REGISTRY_HOST }}
 
       - name: Build Image
         run: |
-          docker build -t europe-west2-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }} .
+          docker build -t ${{ env.IMAGE_URL }}:${{ env.IMAGE_TAG }} .
 
       - name: Run Trivy vulnerability scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: europe-west2-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+          image-ref: ${{ env.IMAGE_URL }}:${{ env.IMAGE_TAG }}
           format: 'table'
           severity: 'CRITICAL,HIGH'
 
       - name: Push Image
-        run: docker push europe-west2-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+        run: docker push ${{ env.IMAGE_URL }}:${{ env.IMAGE_TAG }}
 
 
   deploy:
@@ -61,7 +58,7 @@ jobs:
       - build
     runs-on: ubuntu-latest
     steps:
-      - name: Dispatch workflow and log response
+      - name: Trigger downstream deployment workflow
         run: |
           # Create a temporary file to store the API response body
           response_file=$(mktemp)
@@ -72,8 +69,8 @@ jobs:
             -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.PAT }}"\
-            https://api.github.com/repos/fensomer-pa/test-terraform-gcp/actions/workflows/crj-dev-deploy.yml/dispatches \
-            -d '{"ref":"feature/testing-tf","inputs":{"pipeline_name":"stats-intermediate-to-canonical", "environment_name":"ftr", "image_tag":"europe-west2-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}"}}'
+            https://api.github.com/repos/${{ env.DEPLOYMENT_WORKFLOW_REPO }}/actions/workflows/crj-dev-deploy.yml/dispatches \
+            -d '{"ref":"feature/testing-tf","inputs":{"pipeline_name":"${{ env.PIPELINE_NAME }}", "environment_name":"ftr", "image_tag":"${{ env.IMAGE_URL }}:${{ env.IMAGE_TAG }}"}}'
           )
 
           echo "API response status code: $http_status_code"
@@ -87,4 +84,4 @@ jobs:
             exit 1
           fi
 
-          echo "Successfully triggered workflow. View runs at: https://github.com/fensomer-pa/test-terraform-gcp/actions/workflows/crj-dev-deploy.yml"
+          echo "Successfully triggered workflow. View runs at: https://github.com/${{ env.DEPLOYMENT_WORKFLOW_REPO }}/actions/workflows/crj-dev-deploy.yml"
