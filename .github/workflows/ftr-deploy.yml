@@ -57,11 +57,12 @@ jobs:
 #    needs:
 #      - build
     uses: ./.github/actions/dispatch_deployment_workflow
+    env:
     with:
       pipeline_name: ${{ vars.PIPELINE_NAME }}
       branch_name: ${{ github.ref }}
       deployment_workflow_repo: ${{ vars.DEPLOYMENT_WORKFLOW_REPO }}
       deployment_workflow_name: ${{ vars.DEPLOYMENT_WORKFLOW_NAME }}
-      image_url: '${{ env.IMAGE_URL }}:${{ env.IMAGE_TAG }}'
+      image_url: 'BOB'
     secrets:
       bearer_token: ${{ secrets.PAT }}
