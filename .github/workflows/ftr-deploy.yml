@@ -40,7 +40,7 @@ jobs:
           response_file=$(mktemp)
 
           # Execute curl, writing the HTTP status code to a variable and the body to the temp file
-          http_status_code=$(curl -w "%{http_code}" -L \
+          http_status_code=$(curl -s -w "%{http_code}" -L \
             -o "$response_file" \
             -X POST \
             -H "Accept: application/vnd.github+json" \
